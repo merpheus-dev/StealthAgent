@@ -1,0 +1,1 @@
+﻿public delegate void PlayerEvent<in T>(T t);
