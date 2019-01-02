@@ -7,6 +7,7 @@ using Subtegral.StealthAgent.Interactions;
 using UnityEngine.U2D;
 using UnityEngine.Experimental.U2D;
 using UnityEditor;
+using SimpleJSON;
 
 public static class LevelSerializer
 {
@@ -19,11 +20,16 @@ public static class LevelSerializer
     public static void Serialize(string levelName)
     {
 
-        LevelData data = ScriptableObject.CreateInstance<LevelData>();
+        var data = ScriptableObject.CreateInstance<LevelData>();
         AssetDatabase.CreateAsset(data, string.Format("Assets/Resources/Levels/{0}.asset", levelName));
         AssetDatabase.SaveAssets();
 
         //Sprite Shape
+        SpriteShapeSerialize(data);
+    }
+
+    private static void SpriteShapeSerialize(LevelData data)
+    {
         SpriteShapeController[] spriteShapes = Object.FindObjectsOfType<SpriteShapeController>();
         foreach (var spriteShape in spriteShapes)
         {
@@ -38,15 +44,13 @@ public static class LevelSerializer
                                 .color
             });
         }
+    }
 
-        //Data containers
-        foreach (var item in Object.FindObjectsOfType<MonoBehaviour>().OfType<IDataController>())
-        {
-            data.DataContainers.Add((DataContainer)item.GetContainer());
-            Debug.Log(item.GetContainer().GetTransform().position.ToString());
-        }
-
-        EditorUtility.SetDirty(data);
+    public static void SerializeExisting(LevelData data,string rename)
+    {
+        data.SpriteShapes.Clear();
+        SpriteShapeSerialize(data);
+        AssetDatabase.RenameAsset(AssetDatabase.GetAssetPath(data), rename);
     }
 }
 

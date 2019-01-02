@@ -8,13 +8,14 @@ namespace Subtegral.StealthAgent.EditorSystem
 {
     public class ScriptableObjectFactory
     {
-        private static void CreateObject<T>(string assetName) where T : ScriptableObject
+        public static T CreateObject<T>(string assetName) where T : ScriptableObject
         {
             T item = ScriptableObject.CreateInstance<T>();
-            AssetDatabase.CreateAsset(item, string.Format("Assets/Resources/{0}.asset", assetName));
-            AssetDatabase.SaveAssets();
-            EditorUtility.FocusProjectWindow();
-            Selection.activeObject = item;
+            //AssetDatabase.CreateAsset(item, string.Format("Assets/Resources/{0}.asset", assetName));
+            //AssetDatabase.SaveAssets();
+            //EditorUtility.FocusProjectWindow();
+            //Selection.activeObject = item;
+            return item;
         }
 
         [MenuItem("Subtegral/Create/KeyItem")]

@@ -5,8 +5,6 @@ namespace Subtegral.StealthAgent.GameCore
     {
         void AppendControllerData(Transform transform,IDataController controller);
 
-        IDataController GetController();
-
         (Vector3 position, Quaternion rotation) GetTransform();
     }
 }
