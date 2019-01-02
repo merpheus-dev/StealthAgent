@@ -27,6 +27,9 @@ namespace Subtegral.StealthAgent.EditorSystem
         Vector3 radius = Vector3.one * 2f;
 
         string levelName = "";
+        readonly string prefabPath = "Prefabs/";
+
+        readonly string collectablePath = "Items/Collectables/";
 
         public Vector3 facingDirection
         {
@@ -38,6 +41,7 @@ namespace Subtegral.StealthAgent.EditorSystem
             }
         }
 
+        LevelData _levelData;
 
         [MenuItem("Subtegral/Level Editor")]
         public static void OpenEditor()
@@ -58,7 +62,7 @@ namespace Subtegral.StealthAgent.EditorSystem
         void OnSceneGUI(SceneView sceneView)
         {
 
-            if (EditorApplication.isPlaying)
+            if (EditorApplication.isPlaying || _levelData == null)
                 return;
             Handles.BeginGUI();
             GUILayout.BeginArea(new Rect(5, 5, 100, 300), EditorStyles.helpBox);
@@ -74,23 +78,29 @@ namespace Subtegral.StealthAgent.EditorSystem
 
 
             GUILayout.Label("Prefabs", EditorStyles.boldLabel);
-            DisplayPrefabs("Camera");
-            DisplayPrefabs("Door", (Transform g) => { doorAnchored = g; });
-            DisplayPrefabs("EnemyBase");
-            DisplayPrefabs("Laser");
+            DisplayEditorPrefab<CameraData>("CameraEnemy",prefabPath);
+            DisplayEditorPrefab<DoorData>("Door",prefabPath, (Transform g) => { doorAnchored = g; });
+            DisplayEditorPrefab<EnemyData>("EnemyBase",prefabPath);
+            DisplayEditorPrefab<LasersData>("Laser",prefabPath);
 
 
             GUILayout.Label("Items", EditorStyles.boldLabel);
-            DisplayMenuItem("HackTarget");
-            DisplayMenuItem("Key");
-            DisplayMenuItem("NoiseItem");
-            DisplayMenuItem("TaserItem");
+            DisplayEditorPrefab<HackableData>("HackableObject", prefabPath);
+            DisplayEditorPrefab<KeyData>("Key", prefabPath);
+            DisplayEditorPrefab<NoiseGeneratorData>("NoiseItem", prefabPath);
+            DisplayEditorPrefab<TaserData>("TaserItem", prefabPath);
 
             GUI.color = Color.red;
             if (GUILayout.Button("DEL"))
             {
                 if (Selection.activeGameObject != null)
+                {
+                    DataContainer container = Selection.activeGameObject.GetComponent<IDataController>().GetContainer() as DataContainer;
+                    _levelData.DataContainers.Remove(container);
+                    AssetDatabase.RemoveObjectFromAsset(container);
+                    AssetDatabase.ImportAsset(AssetDatabase.GetAssetPath(_levelData));
                     DestroyImmediate(Selection.activeGameObject);
+                }
             }
             GUI.color = Color.white;
 
@@ -211,47 +221,56 @@ namespace Subtegral.StealthAgent.EditorSystem
 
             EditorGUILayout.Space();
             levelName = EditorGUILayout.TextField("Scene Name:", levelName);
+            _levelData = (LevelData)EditorGUILayout.ObjectField("Level SO:", _levelData, typeof(LevelData), false);
+            if (_levelData != null)
+                foreach (var dataPiece in _levelData.DataContainers)
+                {
+                    EditorGUILayout.LabelField(new GUIContent(dataPiece.name));
+                }
 
             EditorGUILayout.BeginHorizontal();
             GUILayout.FlexibleSpace();
-            if (GUILayout.Button("SAVE"))
+            if (_levelData == null)
             {
-                if (!string.IsNullOrEmpty(levelName))
+                if (GUILayout.Button("SAVE"))
                 {
-                    LevelSerializer.Serialize(levelName);
+                    if (!string.IsNullOrEmpty(levelName))
+                    {
+                        LevelSerializer.Serialize(levelName);
+                    }
                 }
+            }
+            else
+            {
+                if (GUILayout.Button("OVERWRITE SAVE"))
+                    LevelSerializer.SerializeExisting(_levelData, levelName);
             }
             EditorGUILayout.EndHorizontal();
             EditorGUILayout.EndVertical();
         }
 
 
-        void DisplayMenuItem(string ItemName)
-        {
-            if (GUILayout.Button(ItemName))
-            {
-                GameObject shape = Resources.Load<GameObject>("Items/Collectables/" + ItemName);
-                shape = Instantiate(shape);
-                shape.name = ItemName;
-                Selection.activeGameObject = shape;
-                Tools.current = Tool.Move;
-            }
-        }
 
-        void DisplayPrefabs(string ItemName, Action<Transform> action = null)
+        void DisplayEditorPrefab<T>(string itemName, string path, Action<Transform> action = null) where T : ScriptableObject
         {
-
-            if (GUILayout.Button(ItemName))
+            if (GUILayout.Button(itemName))
             {
-                Debug.Log(ItemName);
-                GameObject shape = Resources.Load<GameObject>("Prefabs/" + ItemName);
+                GameObject shape = Resources.Load<GameObject>(path + itemName);
                 shape = Instantiate(shape);
-                shape.name = ItemName;
+                shape.name = itemName;
+                var soInstance = ScriptableObjectFactory.CreateObject<T>(itemName);
+                soInstance.name = itemName;
+                AssetDatabase.AddObjectToAsset(soInstance, _levelData);
+                AssetDatabase.ImportAsset(AssetDatabase.GetAssetPath(_levelData));
+                _levelData.DataContainers.Add(soInstance as DataContainer);
+                shape.GetComponent<IDataController>().Inject(soInstance as DataContainer);
                 Selection.activeGameObject = shape;
                 Tools.current = Tool.Move;
                 action?.Invoke(shape.transform);
             }
         }
+
+
 
 
 

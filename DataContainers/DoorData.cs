@@ -5,7 +5,7 @@ using System;
 using Subtegral.StealthAgent.Interactions;
 using Subtegral.StealthAgent.GameCore;
 
-[Serializable]
+[CreateAssetMenu]
 public class DoorData : DataContainer
 {
     public DoorType DoorType;

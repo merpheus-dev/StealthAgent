@@ -1,12 +1,14 @@
 ﻿using UnityEngine;
 using Subtegral.StealthAgent.GameCore;
-
 public static class ControllerFactory
 {
-    public static IDataController CreateFactory<T>(T t,IDataContainer container)
+    //Generics bitch!
+    public static IDataController CreateFactory<T>(DataContainer container)
     {
-        var controllerObject = Resources.Load(string.Format("Resources/{0}",typeof(T).GetType().ToString()));
-        IDataController controller = (IDataController) Object.Instantiate(controllerObject, container.GetTransform().position, container.GetTransform().rotation);
+        string trgtPath = string.Format("Prefabs/{0}", typeof(T).Name);
+        Debug.Log(trgtPath);
+        var controllerObject = Resources.Load<GameObject>(trgtPath);
+        IDataController controller = Object.Instantiate(controllerObject, container.GetTransform().position, container.GetTransform().rotation).GetComponent<IDataController>();
         controller.Inject(container);
         return controller;
     }

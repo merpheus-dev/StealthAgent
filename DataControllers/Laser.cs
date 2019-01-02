@@ -19,8 +19,8 @@ namespace Subtegral.StealthAgent.Interactions
 
         public void Inject(IDataContainer container)
         {
-            _data.AppendControllerData(transform,this);
             _data = (LasersData)container;
+            _data.AppendControllerData(transform,this);
         }
 
         public IDataContainer GetContainer()
