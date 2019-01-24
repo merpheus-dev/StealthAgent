@@ -19,7 +19,7 @@ namespace Subtegral.StealthAgent.GameCore
 
         public void DrawFOV()
         {
-            if(CurrentEnemyState == EnemyState.Dead)
+            if (CurrentEnemyState == EnemyState.Dead)
             {
                 source.gameObject.SetActive(false);
                 return;
@@ -33,7 +33,7 @@ namespace Subtegral.StealthAgent.GameCore
                         NotifyOthers();
                         return;
                     }
-                    else if(item.CompareTag("Enemy"))
+                    else if (item.CompareTag("Enemy"))
                     {
                         Enemy enemy = item.GetComponent<Enemy>();
                         if (enemiesThatAlreadySeen.Contains(enemy))
@@ -45,13 +45,25 @@ namespace Subtegral.StealthAgent.GameCore
                             SearchAround();
                             enemiesThatAlreadySeen.Add(enemy);
                         }
-                    }else if (item.CompareTag("Hostile"))
+                    }
+                    else if (item.CompareTag("Hostile"))
                     {
                         Debug.Log("Detected");
                         StopPatrol();
                         TargetPosition = item.transform.position;
                         Faking = true;
                         Chase();
+                    }
+                }
+            }
+            else
+            {
+                foreach (var item in source.m_EventManager.GetCollisionObjects())
+                {
+                    if (item.CompareTag("Player"))
+                    {
+                        Chase();
+                        break;
                     }
                 }
             }
@@ -70,7 +82,7 @@ namespace Subtegral.StealthAgent.GameCore
             {
                 if (item != this)
                 {
-                    if (item.CurrentEnemyState == EnemyState.Chase || item.CurrentEnemyState==EnemyState.Dead)
+                    if (item.CurrentEnemyState == EnemyState.Chase || item.CurrentEnemyState == EnemyState.Dead)
                         continue;
                     item.CurrentEnemyState = EnemyState.Notified;
                     item.Chase();
@@ -84,7 +96,7 @@ namespace Subtegral.StealthAgent.GameCore
 
         public override void UpdateByFrame()
         {
-            
+
             DrawFOV();
         }
 

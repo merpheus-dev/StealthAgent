@@ -8,9 +8,10 @@ using UnityEditor;
 public class LevelData : ScriptableObject
 {
     public int Id;
-    public string Name;
+    public string Name="";
     public List<SpriteShapeData> SpriteShapes = new List<SpriteShapeData>();
     public List<DataContainer> DataContainers = new List<DataContainer>();
+    public PlayerData PlayerData = null;
 }
 
 [CustomEditor(typeof(LevelData))]

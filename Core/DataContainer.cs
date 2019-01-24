@@ -9,7 +9,7 @@ namespace Subtegral.StealthAgent.GameCore
         [SerializeField]
         private Quaternion rotation;
 
-        public void AppendControllerData(Transform transform, IDataController controller)
+        public void AppendControllerData(Transform transform)
         {
             position = transform.position;
             rotation = transform.rotation;

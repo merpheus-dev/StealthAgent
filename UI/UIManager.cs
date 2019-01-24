@@ -25,6 +25,9 @@ namespace Subtegral.StealthAgent.UI
         IEnumerator cachedBlinkCoroutine = null;
         IEnumerator cachedProgressBarCoroutine = null;
 
+        //Door lockpick
+        IEnumerator cachedProgressBarForDoor = null;
+
         //Hostile
         public Button TakeHostile;
         public Button DropHostile;
@@ -133,7 +136,7 @@ namespace Subtegral.StealthAgent.UI
             PlayerEventHandler.OnHackSucceed += (HackableObject h) =>
               {
                   StopHackCoroutines();
-                  h.Sprite.color =((HackableData)h.GetContainer()). HackSuccessColor;
+                  h.Sprite.color = ((HackableData)h.GetContainer()).HackSuccessColor;
                   h.IsHacked = true;
                   AfterEnemyTakeDownInteraction();
               };
@@ -166,6 +169,21 @@ namespace Subtegral.StealthAgent.UI
                       h.Parented = false;
                   }
               };
+
+            PlayerEventHandler.OnDoorInteractionStart += (Door d) => 
+            {
+                DoorData dat = d.GetContainer() as DoorData;
+                cachedProgressBarForDoor = FillProgressBar(dat.Interval);
+                StartCoroutine(cachedProgressBarForDoor);
+            };
+
+            PlayerEventHandler.OnDoorInteractionEnd += (Door d) =>
+              {
+                  if (cachedProgressBarForDoor != null)
+                      StopCoroutine(cachedProgressBarForDoor);
+                  cachedProgressBarForDoor = null;
+              };
+
         }
 
         #region Shared Methods
@@ -218,6 +236,7 @@ namespace Subtegral.StealthAgent.UI
         }
 
         #endregion
+
 
         #region Hackables
 

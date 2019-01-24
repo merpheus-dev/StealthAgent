@@ -10,10 +10,14 @@ using UnityEngine.EventSystems;
 namespace Subtegral.StealthAgent.GameCore
 {
     [RequireComponent(typeof(LineRenderer))]
-    public class Player : PhysicalMovement
+    public class Player : PhysicalMovement, IDataController
     {
         public LayerMask LayerMask;
 
+        //Accessed over UIManager
+        public Enemy CurrentEnemyTarget = null;
+
+        #region Private Fields
         private LineRenderer lineRenderer;
 
         private Vector3 pos;
@@ -28,13 +32,39 @@ namespace Subtegral.StealthAgent.GameCore
 
         private AILerp lerp;
 
-        public Enemy CurrentEnemyTarget = null;
+        //  private Seeker seeker;
+
+        private SpriteRenderer _renderer;
+
+        [SerializeField]
+        private PlayerData _data;
+        #endregion
+
+        private bool destinationChanged = false;
+
+        public void Inject(IDataContainer container)
+        {
+            _data = (PlayerData)container;
+            MovementSpeed = _data.MovementSpeed;
+            LookAtRatio = _data.LookAtRatio;
+            EstimationThreshold = _data.EstimationThreshold;
+            //Level design precaution
+            if (_data.Skin != null)
+                _renderer.sprite = _data.Skin.Icon;
+        }
+
+        public IDataContainer GetContainer()
+        {
+            return _data;
+        }
 
         private void Start()
         {
             lineRenderer = GetComponent<LineRenderer>();
             ai = GetComponent<IAstarAI>();
             lerp = GetComponent<AILerp>();
+            _renderer = GetComponent<SpriteRenderer>();
+            lerp.speed = MovementSpeed;
             TargetPosition = transform.position;
             ClearDashedLine();
         }
@@ -49,6 +79,8 @@ namespace Subtegral.StealthAgent.GameCore
                 case Door d:
                     if (interactable.IsCurrentlyInteractable(InventoryManager.Instance.GetItems()))
                         interactable.Interact();
+                    else
+                        d.HackInteraction();
                     break;
                 case Enemy e:
                     if (CurrentEnemyTarget != null)
@@ -103,6 +135,9 @@ namespace Subtegral.StealthAgent.GameCore
                     if (h.IsCurrentlyInteractable())
                         h.InterruptInteraction();
                     break;
+                case Door d:
+                    d.InterruptInteraction();
+                    break;
             }
 
         }
@@ -123,15 +158,65 @@ namespace Subtegral.StealthAgent.GameCore
 
             if (Input.GetMouseButtonUp(0))
             {
+                //TO-DO:Try removing this, looks like always true.
                 if (!isHit)
                 {
-                    TargetPosition = lineRenderer.GetPosition(1);
+                    // TargetPosition = lineRenderer.GetPosition(1);
                     ai.destination = lineRenderer.GetPosition(1);
                     ai.SearchPath();
+                    // TargetPosition = ai.steeringTarget;
+                    destinationChanged = true;
                 }
             }
             if (!Input.GetMouseButton(0))
                 ClearDashedLine();
+
+            if (lerp.hasPath)
+                if (TargetPosition != (Vector2)GetHeading() && destinationChanged)
+                {
+                    LookAtRatio = 10;
+                    TargetPosition = ai.steeringTarget;
+                    destinationChanged = false;
+                    StartCoroutine(NormalizeLookRatio());
+                }
+                else
+                {
+                    TargetPosition = GetHeading();
+                }
+
+        }
+
+        private Vector3 GetHeading()
+        {
+            Vector3 a = transform.position;
+            if (lerp.interpolator.GetMyPath().Count > lerp.interpolator.segmentIndex + 10)
+                a = lerp.interpolator.GetMyPath()[lerp.interpolator.segmentIndex + 10];
+            else
+            {
+                a = lerp.interpolator.GetMyPath()[lerp.interpolator.GetMyPath().Count - 1];
+            }
+            return a;
+        }
+        private void OnDrawGizmos()
+        {
+            if (lerp.hasPath)
+                Gizmos.DrawIcon(GetHeading(), "Target");
+            //  Gizmos.DrawIcon(TargetPosition, "Target");
+        }
+        public void Teleport(Vector2 tPos)
+        {
+            lerp.Teleport(tPos, true);
+        }
+
+        IEnumerator NormalizeLookRatio()
+        {
+            float frameCount = 0;
+            while (frameCount < 25)
+            {
+                yield return new WaitForEndOfFrame();
+                frameCount += 1;
+            }
+            LookAtRatio = 5;
         }
 
         private void ClearDashedLine()
@@ -142,15 +227,7 @@ namespace Subtegral.StealthAgent.GameCore
             }
         }
 
-        public void SetSpeed(float speed)
-        {
-            lerp.speed = speed;
-        }
 
-        public float GetSpeed()
-        {
-            return lerp.speed;
-        }
     }
 
 }

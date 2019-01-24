@@ -39,5 +39,16 @@ namespace Subtegral.StealthAgent.GameCore
                 _renderer.SetPosition(1, axis * LineInfinity);
         }
 
+        public void RenderVerticies(Vector2[] verts, LineProfile profile = null)
+        {
+            Vector3[] vector3s= new Vector3[verts.Length];
+            for (int i = 0; i < verts.Length; i++)
+            {
+                vector3s[i] = verts[i];
+            }
+            _renderer.SetPositions(vector3s);
+            profile.AppendLine(_renderer);
+        }
+
     }
 }

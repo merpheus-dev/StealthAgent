@@ -12,6 +12,9 @@ namespace Subtegral.StealthAgent.EditorSystem
 {
     public class LevelDesigner : EditorWindow
     {
+        static bool displayNewLevel = true;
+        static bool levelWasNull = true;
+        List<GameObject> CreatedObjects = new List<GameObject>();
         static Transform doorAnchored = null;
         AstarPath Path
         {
@@ -26,10 +29,9 @@ namespace Subtegral.StealthAgent.EditorSystem
         Vector3 angle = Vector3.zero;
         Vector3 radius = Vector3.one * 2f;
 
-        string levelName = "";
+        int levelId = -1;
         readonly string prefabPath = "Prefabs/";
 
-        readonly string collectablePath = "Items/Collectables/";
 
         public Vector3 facingDirection
         {
@@ -70,18 +72,20 @@ namespace Subtegral.StealthAgent.EditorSystem
             {
                 GameObject shape = Resources.Load<GameObject>("Editor/ShapeBase");
                 shape = Instantiate(shape);
-                shape.transform.SetParent((GameObject.Find("ObstacleRoot") ?? new GameObject("ObstacleRoot")).transform, true);
+                CreatedObjects.Add(shape);
+               // shape.transform.SetParent(obstacleRoot.transform, true);
                 shape.name = "Obstacle";
                 Selection.activeGameObject = shape;
                 Tools.current = Tool.Move;
             }
 
+            DisplayPlayerButton(_levelData.PlayerData != null);
 
             GUILayout.Label("Prefabs", EditorStyles.boldLabel);
-            DisplayEditorPrefab<CameraData>("CameraEnemy",prefabPath);
-            DisplayEditorPrefab<DoorData>("Door",prefabPath, (Transform g) => { doorAnchored = g; });
-            DisplayEditorPrefab<EnemyData>("EnemyBase",prefabPath);
-            DisplayEditorPrefab<LasersData>("Laser",prefabPath);
+            DisplayEditorPrefab<CameraData>("CameraEnemy", prefabPath);
+            DisplayEditorPrefab<DoorData>("Door", prefabPath, (Transform g) => { doorAnchored = g; });
+            DisplayEditorPrefab<EnemyData>("Enemy", prefabPath);
+            DisplayEditorPrefab<LasersData>("Laser", prefabPath);
 
 
             GUILayout.Label("Items", EditorStyles.boldLabel);
@@ -126,6 +130,7 @@ namespace Subtegral.StealthAgent.EditorSystem
             {
                 if (Selection.activeGameObject.GetComponent<Enemy>())
                 {
+                    Debug.Log("called");
                     GUILayout.BeginArea(new Rect(Camera.current.pixelRect.width / 2f, 5, 250, 25), EditorStyles.helpBox);
                     EditorGUILayout.BeginHorizontal();
                     if (GUILayout.Button("Add WayPoint"))
@@ -219,14 +224,62 @@ namespace Subtegral.StealthAgent.EditorSystem
             EditorGUILayout.LabelField("LEVEL EDITOR", EditorStyles.boldLabel);
             EditorGUILayout.EndHorizontal();
 
-            EditorGUILayout.Space();
-            levelName = EditorGUILayout.TextField("Scene Name:", levelName);
-            _levelData = (LevelData)EditorGUILayout.ObjectField("Level SO:", _levelData, typeof(LevelData), false);
-            if (_levelData != null)
-                foreach (var dataPiece in _levelData.DataContainers)
+            EditorGUILayout.BeginHorizontal();
+            if (GUILayout.Button("NEW LEVEL"))
+            {
+                displayNewLevel = true;
+            }
+
+            if (GUILayout.Button("LOAD LEVEL"))
+            {
+                displayNewLevel = false;
+            }
+            if (!displayNewLevel)
+            {
+                if (GUILayout.Button("CLOSE LEVEL"))
                 {
-                    EditorGUILayout.LabelField(new GUIContent(dataPiece.name));
+                    CloseLevel();
                 }
+            }
+            EditorGUILayout.EndHorizontal();
+
+            if (!displayNewLevel)
+            {
+                if (_levelData != null && _levelData.PlayerData == null)
+                    EditorGUILayout.HelpBox("[!]Player not spawned! Player create a player.", MessageType.Error);
+
+                EditorGUILayout.Space();
+            }
+
+            if (displayNewLevel || (!displayNewLevel && _levelData != null))
+            {
+                if (_levelData != null)
+                    levelId = _levelData.Id != -1 ? _levelData.Id : levelId;
+                levelId = EditorGUILayout.IntField("Level ID:", levelId);
+            }
+
+            if (!displayNewLevel)
+            {
+                if (_levelData == null)
+                    levelWasNull = true;
+                _levelData = (LevelData)EditorGUILayout.ObjectField("Level SO:", _levelData, typeof(LevelData), false);
+                //Frame null check
+                if (levelWasNull && _levelData != null)
+                {
+                    levelWasNull = false;
+                    LoadLevelData();
+                }
+                if (_levelData != null)
+                {
+                    _levelData.Name = EditorGUILayout.TextField("Level Name:", _levelData.Name);
+                    EditorGUILayout.Space();
+                    foreach (var dataPiece in _levelData.DataContainers)
+                    {
+                        EditorGUILayout.LabelField(new GUIContent(dataPiece.name));
+                    }
+                }
+            }
+
 
             EditorGUILayout.BeginHorizontal();
             GUILayout.FlexibleSpace();
@@ -234,22 +287,58 @@ namespace Subtegral.StealthAgent.EditorSystem
             {
                 if (GUILayout.Button("SAVE"))
                 {
-                    if (!string.IsNullOrEmpty(levelName))
+                    if (!displayNewLevel && !string.IsNullOrEmpty(_levelData.Name) || displayNewLevel)
                     {
-                        LevelSerializer.Serialize(levelName);
+                        _levelData = LevelSerializer.Serialize(levelId);
+                        displayNewLevel = false;
                     }
                 }
             }
             else
             {
                 if (GUILayout.Button("OVERWRITE SAVE"))
-                    LevelSerializer.SerializeExisting(_levelData, levelName);
+                    LevelSerializer.SerializeExisting(_levelData, levelId);
             }
             EditorGUILayout.EndHorizontal();
             EditorGUILayout.EndVertical();
         }
 
-
+        private void DisplayPlayerButton(bool isTherePlayerData)
+        {
+            if (isTherePlayerData)
+            {
+                GUI.color = Color.red;
+                if (GUILayout.Button("REMOVE PLAYER"))
+                {
+                    Player _player = FindObjectOfType<Player>();
+                    if (_player != null)
+                        DestroyImmediate(_player.gameObject);
+                    if (_levelData.PlayerData == null)
+                        return;
+                    AssetDatabase.RemoveObjectFromAsset(_levelData.PlayerData);
+                    AssetDatabase.ImportAsset(AssetDatabase.GetAssetPath(_levelData));
+                    _levelData.PlayerData = null;
+                }
+                GUI.color = Color.white;
+            }
+            else
+            {
+                if (GUILayout.Button("ADD PLAYER"))
+                {
+                    var playerData = ScriptableObject.CreateInstance<PlayerData>();
+                    playerData.name = "Player";
+                    AssetDatabase.AddObjectToAsset(playerData, _levelData);
+                    AssetDatabase.ImportAsset(AssetDatabase.GetAssetPath(_levelData));
+                    _levelData.PlayerData = playerData;
+                    _levelData.SetDirty();
+                    GameObject playerPrefab = Resources.Load<GameObject>("Editor/Player");
+                    playerPrefab = Instantiate(playerPrefab);
+                    Selection.activeGameObject = playerPrefab;
+                    Tools.current = Tool.Move;
+                    playerPrefab.GetComponent<Player>().Inject(_levelData.PlayerData);
+                }
+            }
+        }
 
         void DisplayEditorPrefab<T>(string itemName, string path, Action<Transform> action = null) where T : ScriptableObject
         {
@@ -257,6 +346,8 @@ namespace Subtegral.StealthAgent.EditorSystem
             {
                 GameObject shape = Resources.Load<GameObject>(path + itemName);
                 shape = Instantiate(shape);
+                //Add to destruction queue
+                CreatedObjects.Add(shape);
                 shape.name = itemName;
                 var soInstance = ScriptableObjectFactory.CreateObject<T>(itemName);
                 soInstance.name = itemName;
@@ -270,9 +361,32 @@ namespace Subtegral.StealthAgent.EditorSystem
             }
         }
 
+        void CloseLevel()
+        {
+            _levelData = null;
+            levelId = -1;
+            displayNewLevel = true;
+            DestroyControllers();
+            //GameObject[] objects = 
+            //for (var i = 0; i < objects.Length; i++)
+            //{
+            //    DestroyImmediate(objects[i]);
+            //}
+        }
 
+        void LoadLevelData()
+        {
+            DestroyControllers();
+            CreatedObjects = LevelGenerator.GenerateLevel(_levelData);
+        }
 
-
+        private void DestroyControllers()
+        {
+            foreach (var created in CreatedObjects)
+            {
+                DestroyImmediate(created);
+            }
+        }
 
         static JointAngularLimitHandle jointAngularLimitHandle = new JointAngularLimitHandle();
 
