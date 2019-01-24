@@ -13,7 +13,7 @@ namespace Subtegral.StealthAgent.GameCore
 
         public IDataContainer GetContainer()
         {
-            _data.AppendControllerData(transform,this);
+            _data.AppendControllerData(transform);
             return _data;
         }
 

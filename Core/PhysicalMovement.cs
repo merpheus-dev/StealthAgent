@@ -24,6 +24,8 @@ namespace Subtegral.StealthAgent.GameCore
 
         public float LookAtRatio = .1f;
 
+        public float TimeCoefficient = 1f;
+
         public float? Angle
         {
             get
@@ -71,12 +73,12 @@ namespace Subtegral.StealthAgent.GameCore
 
         public void MoveToTarget()
         {
-            _rigidbody.MovePosition(_rigidbody.position + direction.normalized * MovementSpeed * Time.deltaTime);
+            _rigidbody.MovePosition(_rigidbody.position + direction.normalized * MovementSpeed * Time.deltaTime*TimeCoefficient);
         }
 
         public void LookAtTarget()
         {
-            transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.AngleAxis((float)Angle, Vector3.forward), LookAtRatio);
+            transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.AngleAxis((float)Angle, Vector3.forward), LookAtRatio*TimeCoefficient);
         }
 
         float MeasureObjectDistance(Vector2 a, Vector2 b)

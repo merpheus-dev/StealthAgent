@@ -2,13 +2,16 @@
 using System.Collections.Generic;
 using UnityEngine;
 using Subtegral.StealthAgent.GameCore;
+using System;
 
 namespace Subtegral.StealthAgent.Interactions
 {
-    public class Door : MonoBehaviour, IInteractable,IDataController
+    public class Door : MonoBehaviour, IInterruptableInteractable, IDataController
     {
         [SerializeField]
         private DoorData _data;
+
+        public Action<bool, DoorType> HookFunction;
 
         public void Inject(IDataContainer container)
         {
@@ -17,7 +20,7 @@ namespace Subtegral.StealthAgent.Interactions
 
         public IDataContainer GetContainer()
         {
-            _data.AppendControllerData(transform,this);
+            _data.AppendControllerData(transform);
             return _data;
         }
 
@@ -26,6 +29,16 @@ namespace Subtegral.StealthAgent.Interactions
             if (_data.AnchorPoint == null)
                 throw new System.Exception("Anchor Not Assigned!");
             StartCoroutine(OpenTheDoor());
+        }
+
+        public void HackInteraction()
+        {
+            HookFunction?.Invoke(true, _data.DoorType);
+        }
+
+        public void InterruptInteraction()
+        {
+            HookFunction?.Invoke(false, DoorType.Blue);
         }
 
         private IEnumerator OpenTheDoor()
@@ -39,11 +52,11 @@ namespace Subtegral.StealthAgent.Interactions
 
         public bool IsCurrentlyInteractable(params object[] optionalObjects)
         {
-            if(optionalObjects!=null && optionalObjects.Length> 0)
+            if (optionalObjects != null && optionalObjects.Length > 0)
             {
                 foreach (var item in optionalObjects)
                 {
-                    if (item is KeyItem && ((KeyItem)item).KeyType== _data.DoorType)
+                    if (item is KeyItem && ((KeyItem)item).KeyType == _data.DoorType)
                     {
                         return true;
                     }

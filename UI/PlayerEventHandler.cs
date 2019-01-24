@@ -17,4 +17,6 @@ public static class PlayerEventHandler
     public static PlayerEvent<HackableObject> OnHackSucceed;
     public static PlayerEvent<Hostile> OnHostileEnter;
     public static PlayerEvent<Hostile> OnHostileExit;
+    public static PlayerEvent<Door> OnDoorInteractionStart;
+    public static PlayerEvent<Door> OnDoorInteractionEnd;
 }

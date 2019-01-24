@@ -3,7 +3,7 @@ namespace Subtegral.StealthAgent.GameCore
 {
     public interface IDataContainer
     {
-        void AppendControllerData(Transform transform,IDataController controller);
+        void AppendControllerData(Transform transform);
 
         (Vector3 position, Quaternion rotation) GetTransform();
     }
