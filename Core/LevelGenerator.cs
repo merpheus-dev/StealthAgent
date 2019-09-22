@@ -10,6 +10,10 @@ namespace Subtegral.StealthAgent.GameCore
     {
         public static List<GameObject> GenerateLevel(LevelData data, bool runtime = false)
         {
+            if (data.Graphs != null)
+               AstarPath.active.data.DeserializeGraphsAdditive(data.Graphs);
+            AstarPath.active.Scan();
+
             List<GameObject> instances = new List<GameObject>();
             List<DataContainer> containers = data.DataContainers;
             foreach (var item in containers)
@@ -63,6 +67,15 @@ namespace Subtegral.StealthAgent.GameCore
             Player _player = playerObject.GetComponent<Player>();
             _player.Inject(data.PlayerData);
             instances.Add(playerObject);
+
+            GameObject finishZone = Resources.Load<GameObject>("Editor/FinishZone");
+            finishZone = MonoBehaviour.Instantiate(finishZone, data.FinishZoneData.GetTransform().position, data.FinishZoneData.GetTransform().rotation);
+            finishZone.GetComponent<FinishZone>().Inject(data.FinishZoneData);
+            instances.Add(finishZone);
+
+            //if(runtime)
+            //    AstarPath.active.Scan();
+
             /*
             if (runtime)
                 for (int i = 0; i < 3; i++)

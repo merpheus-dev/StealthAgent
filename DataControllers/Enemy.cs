@@ -100,8 +100,11 @@ namespace Subtegral.StealthAgent.GameCore
         #region FOV Trigger Cycle
         private void OnCollisionEnter2D(Collision2D collision)
         {
-            if (collision.gameObject.CompareTag("Player") && CurrentEnemyState == EnemyState.Chase)
+            if (collision.gameObject.CompareTag("Player") && (CurrentEnemyState == EnemyState.Chase || CurrentEnemyState==EnemyState.Notified))
+            {
                 CurrentEnemyState = EnemyState.ChaseComplete;
+                PlayerEventHandler.OnGameOver(false);
+            }
         }
 
         public void Chase()
@@ -169,12 +172,13 @@ namespace Subtegral.StealthAgent.GameCore
             }
 
             //TO-DO:Refactor this part and move getcomponent call to Awake
-            lerper.speed = _enemyData.SearchSpeed;
+            if (CurrentEnemyState != EnemyState.Notified && CurrentEnemyState != EnemyState.Chase)
+                lerper.speed = _enemyData.SearchSpeed;
 
             Angle = Mathf.Atan2(lerper.interpolator.tangent.y, lerper.interpolator.tangent.x) * Mathf.Rad2Deg;
             LookAtRatio = 3f;
             //Dont pick a new location until ai finishes the current target look around path
-            if (!ai.reachedEndOfPath)
+            if (CurrentEnemyState != EnemyState.Seek || !ai.reachedEndOfPath)
                 return;
 
             AstarPath path = FindObjectOfType<AstarPath>();

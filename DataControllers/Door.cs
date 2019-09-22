@@ -6,7 +6,7 @@ using System;
 
 namespace Subtegral.StealthAgent.Interactions
 {
-    public class Door : MonoBehaviour, IInterruptableInteractable, IDataController
+    public class Door : MonoBehaviour, IInterruptableInteractable, IDataController, IEnable
     {
         [SerializeField]
         private DoorData _data;
@@ -26,7 +26,7 @@ namespace Subtegral.StealthAgent.Interactions
 
         public void Interact()
         {
-            if (_data.AnchorPoint == null)
+            if (_data.AnchorPoint == Vector3.zero)
                 throw new System.Exception("Anchor Not Assigned!");
             StartCoroutine(OpenTheDoor());
         }
@@ -43,11 +43,9 @@ namespace Subtegral.StealthAgent.Interactions
 
         private IEnumerator OpenTheDoor()
         {
-            while (Quaternion.Angle(transform.rotation, Quaternion.AngleAxis(_data.TargetAngle, Vector3.forward)) > .1f)
-            {
-                yield return null;
-                transform.RotateAround(_data.AnchorPoint.position, Vector3.forward, _data.TargetAngle);
-            }
+            yield return null;
+            transform.RotateAround(_data.AnchorPoint, Vector3.forward, _data.TargetAngle);
+
         }
 
         public bool IsCurrentlyInteractable(params object[] optionalObjects)
@@ -65,6 +63,10 @@ namespace Subtegral.StealthAgent.Interactions
             return false;
         }
 
+        public void Enable()
+        {
+            Interact();
+        }
     }
 
     public enum DoorType

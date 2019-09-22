@@ -8,6 +8,7 @@ using UnityEngine.U2D;
 using UnityEngine.Experimental.U2D;
 using UnityEditor;
 using SimpleJSON;
+using Pathfinding;
 
 public static class LevelSerializer
 {
@@ -69,7 +70,20 @@ public static class LevelSerializer
         {
             perObject.gameObject.GetComponent<IDataController>()?.GetContainer().AppendControllerData(perObject.transform);
         }
-       // IDataController[] controler = Object.FindObjectOfType
+    }
+
+    public static void FinishZoneSerialize(LevelData data)
+    {
+        if (!GameObject.FindObjectOfType<FinishZone>())
+            throw new System.Exception("Finish zone has not been planted!!!");
+        FinishZone targetGameObject = GameObject.FindObjectOfType<FinishZone>();
+        data.FinishZoneData.AppendControllerData(targetGameObject.gameObject.transform);
+        data.FinishZoneData = (FinisZoneData)targetGameObject.GetContainer();
+    }
+
+    public static void GraphSerialize(LevelData data)
+    {
+        data.Graphs = AstarPath.active.data.SerializeGraphs();
     }
 
     public static void SerializeExisting(LevelData data, int levelId)
@@ -77,6 +91,8 @@ public static class LevelSerializer
         data.SpriteShapes.Clear();
         SpriteShapeSerialize(data);
         TransformSerialize(data);
+        FinishZoneSerialize(data);
+        GraphSerialize(data);
         string newPath = AssetDatabase.RenameAsset(AssetDatabase.GetAssetPath(data), levelId.ToString());
         AssetDatabase.ImportAsset(newPath);
     }

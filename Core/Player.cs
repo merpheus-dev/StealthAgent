@@ -184,8 +184,31 @@ namespace Subtegral.StealthAgent.GameCore
                     TargetPosition = GetHeading();
                 }
 
+            //--------->Refactor this shit
+            TorchEnemy[] enemies = FindObjectsOfType<TorchEnemy>();
+            if (enemies.Length > 0)
+            {
+                TorchEnemy nearestEnemy = enemies[0];
+                for (var i = 0; i < enemies.Length; i++)
+                {
+                    if (Vector2.Distance(transform.position, enemies[i].transform.position) < Vector2.Distance(transform.position, nearestEnemy.transform.position))
+                    {
+                        nearestEnemy = enemies[i];
+                    }
+                }
+                Debug.Log("NEAREST DISTANCE:" + Vector2.Distance(transform.position, nearestEnemy.transform.position).ToString());
+                if (Vector2.Distance(transform.position, nearestEnemy.transform.position) < _data.EnemyCollisionAvoidanceDistance)
+                {
+                    ai.canMove = false;
+                }
+            }
+            //<<<<<<<<<<<
         }
-
+        /// <summary>
+        /// Used to give system to ability to turn the player sprite to current path's node points.
+        /// This way, player will always look ahead(according to its direction)
+        /// </summary>
+        /// <returns> </returns>
         private Vector3 GetHeading()
         {
             Vector3 a = transform.position;
@@ -199,7 +222,7 @@ namespace Subtegral.StealthAgent.GameCore
         }
         private void OnDrawGizmos()
         {
-            if (lerp.hasPath)
+            if (Application.isPlaying && lerp.hasPath)
                 Gizmos.DrawIcon(GetHeading(), "Target");
             //  Gizmos.DrawIcon(TargetPosition, "Target");
         }

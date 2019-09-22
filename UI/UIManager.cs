@@ -32,11 +32,33 @@ namespace Subtegral.StealthAgent.UI
         public Button TakeHostile;
         public Button DropHostile;
 
+        //Win/Lose GUI
+        public GameObject WinScreen;
+        public GameObject LoseScreen;
+
         private Player player;
         void Start()
         {
             player = FindObjectOfType<Player>();
+            ClearCache();
             PopulateEvents();
+        }
+
+        private void ClearCache()
+        {
+            PlayerEventHandler.OnItemGrabbed = null;
+            PlayerEventHandler.OnKnockingEnemy = null;
+            PlayerEventHandler.OnKnockingEnemyInterrupted = null;
+            PlayerEventHandler.OnDeadEnemyCollisionEnter = null;
+            PlayerEventHandler.OnDeadEnemyCollisionExit = null;
+            PlayerEventHandler.OnHackStarted = null;
+            PlayerEventHandler.OnHackInterrupted = null;
+            PlayerEventHandler.OnHackSucceed = null;
+            PlayerEventHandler.OnHostileEnter = null;
+            PlayerEventHandler.OnHostileExit = null;
+            PlayerEventHandler.OnDoorInteractionStart = null;
+            PlayerEventHandler.OnDoorInteractionEnd = null;
+            PlayerEventHandler.OnGameOver = null;
         }
 
         private void PopulateEvents()
@@ -169,8 +191,8 @@ namespace Subtegral.StealthAgent.UI
                       h.Parented = false;
                   }
               };
-
-            PlayerEventHandler.OnDoorInteractionStart += (Door d) => 
+            //DOOR HACK EVENTS
+            PlayerEventHandler.OnDoorInteractionStart += (Door d) =>
             {
                 DoorData dat = d.GetContainer() as DoorData;
                 cachedProgressBarForDoor = FillProgressBar(dat.Interval);
@@ -184,6 +206,14 @@ namespace Subtegral.StealthAgent.UI
                   cachedProgressBarForDoor = null;
               };
 
+            //GAME OVER EVENTS
+            PlayerEventHandler.OnGameOver += (bool status) =>
+            {
+                StopAllCoroutines();
+                WinScreen.SetActive(status);
+                LoseScreen.SetActive(!status);
+                player.gameObject.SetActive(false);
+            };
         }
 
         #region Shared Methods

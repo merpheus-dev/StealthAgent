@@ -19,4 +19,5 @@ public static class PlayerEventHandler
     public static PlayerEvent<Hostile> OnHostileExit;
     public static PlayerEvent<Door> OnDoorInteractionStart;
     public static PlayerEvent<Door> OnDoorInteractionEnd;
+    public static PlayerEvent<bool> OnGameOver; //true=>success| false=>fail
 }

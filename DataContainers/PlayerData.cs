@@ -11,5 +11,6 @@ namespace Subtegral.StealthAgent.GameCore
         public float EstimationThreshold = 0.1f;
         public float LookAtRatio = 5f;
         public SkinData Skin;
+        public float EnemyCollisionAvoidanceDistance = .7f;
     }
 }

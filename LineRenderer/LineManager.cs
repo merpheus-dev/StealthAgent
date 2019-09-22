@@ -6,12 +6,17 @@ namespace Subtegral.StealthAgent.GameCore
 {
     public class LineManager : MonoBehaviour
     {
+        [SerializeField] private Material lineMaterial;
+        
         private LineRenderer _renderer;
 
         public static float LineInfinity = 10000f;
         private void Awake()
         {
             _renderer = gameObject.AddComponent<LineRenderer>();
+            _renderer.material = lineMaterial;
+            _renderer.startWidth=.05f;
+            _renderer.endWidth=.05f;
         }
 
         private void RenderStartPoint(Vector2 a,LineProfile profile)
